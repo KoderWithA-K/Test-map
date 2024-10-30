@@ -224,7 +224,70 @@ folium_static(m)
 
 df = pd.DataFrame(data)
 
-# Display the table in Streamlit
-st.dataframe(df, hide_index = True, use_container_width= True)
+html_table = df.to_html(index=False, classes='table table-striped') 
+ 
+# Add custom CSS to make the table responsive and align title to the left 
+st.write(""" 
+    <style> 
+    .table { 
+        width: 100%; 
+        max-width: 100%; 
+        margin-bottom: 1rem; 
+        background-color: transparent; 
+    } 
+    .table th, 
+    .table td { 
+        padding: 0.75rem; 
+        vertical-align: top; 
+        border-top: 1px solid #dee2e6; 
+        text-align: left; /* Align text to the left */ 
+    } 
+    .table thead th { 
+        vertical-align: bottom; 
+        border-bottom: 2px solid #dee2e6; 
+    } 
+    .table tbody + tbody { 
+        border-top: 2px solid #dee2e6; 
+    } 
+    .table-sm th, 
+    .table-sm td { 
+        padding: 0.3rem; 
+    } 
+    .table-bordered { 
+        border: 1px solid #dee2e6; 
+    } 
+    .table-bordered th, 
+    .table-bordered td { 
+        border: 1px solid #dee2e6; 
+    } 
+    .table-bordered thead th, 
+    .table-bordered thead td { 
+        border-bottom-width: 2px; 
+    } 
+    .table-borderless th, 
+    .table-borderless td, 
+    .table-borderless thead th, 
+    .table-borderless tbody + tbody { 
+        border: 0; 
+    } 
+    .table-hover tbody tr:hover { 
+        background-color: rgba(0, 0, 0, 0.075); 
+    } 
+    @media (max-width: 768px) { 
+        .table-responsive { 
+            display: block; 
+            width: 100%; 
+            overflow-x: auto; 
+            -webkit-overflow-scrolling: touch; 
+        } 
+        .table-responsive > .table-bordered { 
+            border: 0; 
+        } 
+    } 
+    </style> 
+""", unsafe_allow_html=True) 
+ 
+# Display the table 
+st.write(html_table, unsafe_allow_html=True)
 
 st.markdown("[![Text hints](https://img.icons8.com/?size=80&id=MhNWGcvOM41M&format=png)](https://docs.google.com/spreadsheets/d/101R97Az6VXjjAlitPbymr5qZFAAHzdQELR6yZtgCcgQ/edit?usp=sharing) [Text hints](https://docs.google.com/spreadsheets/d/101R97Az6VXjjAlitPbymr5qZFAAHzdQELR6yZtgCcgQ/edit?usp=sharing)")
