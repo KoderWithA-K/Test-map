@@ -6,16 +6,17 @@ import numpy as np
 import pickle
 import os
 
-# Set page title
-st.title("Singapore Grid Map")
+# Initialize session state for grid colors
+if 'grid_colors' not in st.session_state:
+    st.session_state.grid_colors = {}
 
-# Initialize state
-if 'golden_grids' not in st.session_state:
-    st.session_state.golden_grids = set()  # Only need to track gold cells
+# Set page title
+st.title("Singapore Interactive Grid Map")
 
 # Sidebar controls
 st.sidebar.header("Grid Settings")
 grid_size = 0.6
+color_option = st.sidebar.selectbox("Select Color", ["blue", "gold"])
 
 # Search functionality
 st.sidebar.header("Location Search")
@@ -44,108 +45,60 @@ def create_grid(grid_size):
     grid_cells = []
     for lat in np.arange(bounds['min_lat'], bounds['max_lat'], grid_size_deg):
         for lon in np.arange(bounds['min_lon'], bounds['max_lon'], grid_size_deg):
-            cell_id = f"{lat:.4f}_{lon:.4f}"
-            grid_cells.append((cell_id, lat, lon))
+            grid_id = f"{lat:.4f}_{lon:.4f}"
+            grid_cells.append({
+                'id': grid_id,
+                'bounds': [[lat, lon], [lat + grid_size_deg, lon + grid_size_deg]]
+            })
+            # Initialize grid color to blue
+            if grid_id not in st.session_state.grid_colors:
+                st.session_state.grid_colors[grid_id] = 'blue'
     
-    return grid_cells, bounds
+    return grid_cells
 
-# Create grid cells and get bounds
-grid_cells, bounds = create_grid(grid_size)
+# Create grid cells
+grid_cells = create_grid(grid_size)
 
-# Range selection inputs
-st.header("Select Range to Mark as Gold")
-st.write("First Corner:")
-col1, col2 = st.columns(2)
-with col1:
-    start_lat = st.number_input("Start Latitude", 
-                               min_value=bounds['min_lat'],
-                               max_value=bounds['max_lat'],
-                               value=1.3521,
-                               format="%.4f",
-                               key="start_lat")
-with col2:
-    start_lon = st.number_input("Start Longitude", 
-                               min_value=bounds['min_lon'],
-                               max_value=bounds['max_lon'],
-                               value=103.8198,
-                               format="%.4f",
-                               key="start_lon")
-
-st.write("Second Corner:")
-col1, col2 = st.columns(2)
-with col1:
-    end_lat = st.number_input("End Latitude", 
-                             min_value=bounds['min_lat'],
-                             max_value=bounds['max_lat'],
-                             value=1.3621,
-                             format="%.4f",
-                             key="end_lat")
-with col2:
-    end_lon = st.number_input("End Longitude", 
-                             min_value=bounds['min_lon'],
-                             max_value=bounds['max_lon'],
-                             value=103.8298,
-                             format="%.4f",
-                             key="end_lon")
-
-# Function to find the nearest grid cell
-def find_nearest_grid(lat, lon, grid_size):
-    grid_size_deg = grid_size / 111
-    # Find the nearest grid starting point
-    nearest_lat = np.floor((lat - bounds['min_lat']) / grid_size_deg) * grid_size_deg + bounds['min_lat']
-    nearest_lon = np.floor((lon - bounds['min_lon']) / grid_size_deg) * grid_size_deg + bounds['min_lon']
-    return f"{nearest_lat:.4f}_{nearest_lon:.4f}"
-
-# Function to get all grid cells in a range
-def get_grid_cells_in_range(start_lat, start_lon, end_lat, end_lon, grid_size):
-    grid_size_deg = grid_size / 111
+# Set specific grid cells to gold
+gold_grids = [
+    "1.2689_103.8216", "1.2689_103.8162", "1.2689_103.8108", "1.2689_103.8054", "1.2689_103.8000",
+    "1.2743_103.8000", "1.2743_103.8054", "1.2743_103.8108", "1.2743_103.8162", "1.2797_103.8054",
+    "1.2797_103.8000", "1.2797_103.7946", "1.2797_103.7892", "1.2797_103.7838", "1.2851_103.7838",
+    "1.2851_103.7784", "1.2851_103.7892", "1.2851_103.8108", "1.2905_103.8108", "1.2959_103.8054",
+    "1.2959_103.8000", "1.2743_103.8486", "1.2797_103.8486", "1.2797_103.8432", "1.2797_103.8378", "1.2797_103.8486", "1.2797_103.8541", "1.2797_103.8595",
+    "1.2743_103.8595", "1.2797_103.8703", "1.2797_103.8649", "1.2851_103.8541", "1.2851_103.8595", "1.2905_103.8541", "1.2905_103.8595", "1.2905_103.8649", "1.2905_103.8703", "1.2851_103.8703", "1.2851_103.8432", "1.2851_103.8378", "1.2905_103.8432", "1.2959_103.8432",
+    "1.2959_103.8378", "1.2959_103.8324", "1.2905_103.8324", "1.2959_103.8270", "1.2905_103.8270", "1.2959_103.8703", "1.2959_103.8757", "1.2959_103.8811", "1.2959_103.8865", "1.2959_103.8919", "1.3014_103.8919", "1.3014_103.8973", "1.3014_103.8865", "1.3014_103.8811",
+    "1.3014_103.8486", "1.3014_103.8595", "1.3014_103.8649", "1.3014_103.8703", "1.3068_103.8757", "1.3068_103.8703", "1.3068_103.8649", "1.3068_103.8595", "1.3068_103.8541", "1.3068_103.8486", "1.3068_103.8432", "1.3122_103.8757", "1.3176_103.8757", "1.3230_103.8757",
+    "1.3068_103.8919", "1.3122_103.8865", "1.3122_103.8919", "1.3122_103.8973", "1.3122_103.9027", "1.3176_103.9027", "1.3176_103.8973", "1.3176_103.8919", "1.2959_103.9027", "1.2959_103.9081", "1.3014_103.9135", "1.3068_103.9189", "1.3068_103.9135", "1.3068_103.9081", "1.3068_103.9027", "1.3122_103.9189",
     
-    # Ensure correct order of coordinates
-    min_lat = min(start_lat, end_lat)
-    max_lat = max(start_lat, end_lat)
-    min_lon = min(start_lon, end_lon)
-    max_lon = max(start_lon, end_lon)
-    
-    cells = set()
-    current_lat = min_lat
-    while current_lat <= max_lat:
-        current_lon = min_lon
-        while current_lon <= max_lon:
-            cell_id = find_nearest_grid(current_lat, current_lon, grid_size)
-            cells.add(cell_id)
-            current_lon += grid_size_deg
-        current_lat += grid_size_deg
-    return cells
 
-# Buttons to mark range as gold or blue
-col1, col2 = st.columns(2)
-with col1:
-    if st.button("Mark Range as Gold"):
-        range_cells = get_grid_cells_in_range(start_lat, start_lon, end_lat, end_lon, grid_size)
-        st.session_state.golden_grids.update(range_cells)
-        st.success(f"Marked {len(range_cells)} cells as gold")
 
-with col2:
-    if st.button("Mark Range as Blue"):
-        range_cells = get_grid_cells_in_range(start_lat, start_lon, end_lat, end_lon, grid_size)
-        st.session_state.golden_grids.difference_update(range_cells)
-        st.success(f"Marked {len(range_cells)} cells as blue")
+
+]
+
+for grid_id in gold_grids:
+    st.session_state.grid_colors[grid_id] = 'gold'
+
+# Create select box for grid cell selection
+grid_ids = [cell['id'] for cell in grid_cells]
+selected_grid = st.selectbox("Select grid cell to color", grid_ids)
+
+# Button to apply color
+if st.button(f"Color selected grid {color_option}"):
+    st.session_state.grid_colors[selected_grid] = color_option
+    st.experimental_rerun()
 
 # Draw grid cells on map
-grid_size_deg = grid_size / 111
-for cell_id, lat, lon in grid_cells:
-    # Set color - gold if in golden_grids, blue otherwise
-    fill_color = 'gold' if cell_id in st.session_state.golden_grids else 'blue'
-    
-    # Create rectangle for each grid cell
+for cell in grid_cells:
+    fill_color = st.session_state.grid_colors.get(cell['id'], 'transparent')
     folium.Rectangle(
-        bounds=[[lat, lon], [lat + grid_size_deg, lon + grid_size_deg]],
+        bounds=cell['bounds'],
         color="black",
         weight=1,
         fill=True,
         fill_color=fill_color,
         fill_opacity=0.3,
-        popup=f"Coordinates: ({lat:.4f}, {lon:.4f})"
+        popup=f"Grid ID: {cell['id']}"
     ).add_to(m)
 
 # Handle location search
@@ -169,38 +122,32 @@ if search_button and search_query:
 # Display map
 folium_static(m)
 
-# Save and load functionality
-col1, col2 = st.columns(2)
+# Save/Load/Clear buttons
+col1, col2, col3 = st.columns(3)
 
 with col1:
-    if st.button("Save Gold Markers"):
+    if st.button("Save Grid Colors"):
         try:
-            with open('golden_grids.pkl', 'wb') as f:
-                pickle.dump(st.session_state.golden_grids, f)
-            st.success("Gold markers saved successfully!")
+            with open('grid_colors.pkl', 'wb') as f:
+                pickle.dump(st.session_state.grid_colors, f)
+            st.success("Grid colors saved successfully!")
         except Exception as e:
-            st.error(f"Error saving: {str(e)}")
+            st.error(f"Error saving grid colors: {str(e)}")
 
 with col2:
-    if st.button("Load Saved Markers"):
+    if st.button("Load Saved Grid Colors"):
         try:
-            if os.path.exists('golden_grids.pkl'):
-                with open('golden_grids.pkl', 'rb') as f:
-                    st.session_state.golden_grids = pickle.load(f)
-                st.success("Gold markers loaded successfully!")
+            if os.path.exists('grid_colors.pkl'):
+                with open('grid_colors.pkl', 'rb') as f:
+                    st.session_state.grid_colors = pickle.load(f)
+                st.success("Grid colors loaded successfully!")
                 st.experimental_rerun()
             else:
-                st.warning("No saved data found!")
+                st.warning("No saved grid colors found!")
         except Exception as e:
-            st.error(f"Error loading: {str(e)}")
+            st.error(f"Error loading grid colors: {str(e)}")
 
-# Clear button
-if st.button("Clear All Gold Markers"):
-    st.session_state.golden_grids = set()
-    st.experimental_rerun()
-
-# Display currently golden grids
-st.write("Current gold markers:")
-for grid_id in st.session_state.golden_grids:
-    lat, lon = grid_id.split('_')
-    st.write(f"Grid at ({lat}, {lon})")
+with col3:
+    if st.button("Clear All Colors"):
+        st.session_state.grid_colors = {}
+        st.experimental_rerun()
