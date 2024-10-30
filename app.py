@@ -5,13 +5,82 @@ from geopy.geocoders import Nominatim
 import numpy as np
 import pickle
 import os
+import pandas as pd
+
+# Create the data
+data = {
+    "S/N": ["DH1", "DH2", "DH3", "DH4", "DH5", "DH6", "DH7", "DH8", "DH9", "DH10", 
+            "DH11", "DH12", "DH13", "DH14", "DH15", "DH16", "DH17", "DH18", "DH19", "DH20", 
+            "DH21", "DH22", "DH23", "DH24", "DH25", "DH26", "DH27", "DH28", "DH29", "DH30", 
+            "DH31", "DH32", "DH33", "DH34", "DH35", "DH36", "DH37", "DH38", "DH39", "DH40", 
+            "DH41", "DH42", "DH43", "DH44", "DH45", "DH46", "DH47", "DH48", "DH49", "DH50", 
+            "DH51", "DH52", "DH53", "DH54", "DH55", "DH56", "DH57", "DH58"],
+    "Hint": ["There is something fading away near the coin's hiding spot.",
+             "If you see something stopping, you may be less than 300m away from the coin's hiding spot.",
+             "Somewhere within the area, you might see an object in the air.",
+             "If you spot the number 4, face NNW and the hiding spot might be in that direction.",
+             "The area has at least 1 manmade place where humans may become tired.",
+             "The coin may be warmer at 9am compared to 5pm.",
+             "There is a lamp post within 45 steps of the coin's hiding spot.",
+             "Those who are lost may be drawn.",
+             "Why is this not fixed?",
+             "Sqkii heard that something fierce is in the area's history.",
+             "A set: The trigger to sleep can be found within 399m of the coin's spot.",
+             "Temper, strength and friends came from the area where the coin will be.",
+             "There is something missing within walking distance from the coin's hiding spot.",
+             "There is at least 1 place in the area where you can find bound things.",
+             "A set: Within 311m of the coin's spot, you can reduce something that connects.",
+             "Within 500m of the coin's spot, there is a lack of permanence.",
+             "There is a crack near the coin's hiding spot.",
+             "The area has at least 2 places where humans want low points.",
+             "Look out for something that was manufactured between 2013 and 2018.",
+             "A set: If you find the falling things, you might be within 450m of the coin's spot.",
+             "A sea of watchful eyes but none the wiser.",
+             "The coin is within 600m of a place where something may be subsidised.",
+             "Think of a word.",
+             "A set: Within 500m of the coin, there's a relative of something that only fits one.",
+             "The combination mentioned in an MRT station hint affected humans.",
+             "You might find creative humans within 1.2km of the coin.",
+             "There is a toilet within 700m of the coin.",
+             "Something significant happened near the coin's hiding spot between 2015 – 2019.",
+             "If you see an AED, the coin's spot may be within a 10-min walk.",
+             "You do not have to look around a bronze lamp post.",
+             "Daily Hint #8 is somewhere high overhead.",
+             "A human nearby may be afraid.",
+             "The things in Daily Hint #12 are part of a larger collection.",
+             "The coin will be within 300m of something that is older than 5 years old.",
+             "Daily Hint #16 comes with a cost.",
+             "See a number placed above average human height? You may be within 200m of the coin's spot.",
+             "Look up heritage trees. One of the species can be found near the hiding spot.",
+             "The coin will not be hidden at a working public phone.",
+             "Hungry humans may become happy within 602m of the coin's hiding spot.",
+             "Within 480m of the coin's spot, there is something that can have different insides.",
+             "Something seems fun less than 600m away from the coin's spot.",
+             "The humans in Daily Hint #26 may go home with something new.",
+             "The humans in Daily Hint #18 will be hoping for the best.",
+             "If you can see something from the other side, you may be on the right track.",
+             "Route A (1/5): From a bus stop, face south and walk until you reach a traffic light.",
+             "The human in Daily Hint #32 is not likely to be standing up.",
+             "There is something symbolic less than 300m away from the coin's hiding spot.",
+             "Route A (2/5): Turn left and walk for approximately 450m.",
+             "Remember Daily Hint #25? Think about younger humans.",
+             "The coin will not be hidden on a rooftop garden.",
+             "Something that is yours but not yet with you – look within 320m of the coin's spot.",
+             "Something fragrant may be found within 290m of the coin's spot.",
+             "The thing in Daily Hint #2 has windows.",
+             "A fitness corner is not where you'll find the coin.",
+             "If you choose, the thing in Daily Hint #40 may not have anything in it at all.",
+             "You can find fruits of the sea within 600m of the coin's spot.",
+             "The coin's spot is within 311m of something that has a fixed lifespan.",
+             "If you see a 2D version of something meant for movement, you may be within 705m of the coin's spot."]
+}
 
 # Initialize session state for grid colors
 if 'grid_colors' not in st.session_state:
     st.session_state.grid_colors = {}
 
 # Set page title
-st.title("Singapore Interactive Grid Map")
+st.title("Singapore Grid Map (Incomplete)")
 
 # Sidebar controls
 st.sidebar.header("Grid Settings")
@@ -70,7 +139,7 @@ gold_grids = [
     "1.2959_103.8378", "1.2959_103.8324", "1.2905_103.8324", "1.2959_103.8270", "1.2905_103.8270", "1.2959_103.8703", "1.2959_103.8757", "1.2959_103.8811", "1.2959_103.8865", "1.2959_103.8919", "1.3014_103.8919", "1.3014_103.8973", "1.3014_103.8865", "1.3014_103.8811",
     "1.3014_103.8486", "1.3014_103.8595", "1.3014_103.8649", "1.3014_103.8703", "1.3068_103.8757", "1.3068_103.8703", "1.3068_103.8649", "1.3068_103.8595", "1.3068_103.8541", "1.3068_103.8486", "1.3068_103.8432", "1.3122_103.8757", "1.3176_103.8757", "1.3230_103.8757",
     "1.3068_103.8919", "1.3122_103.8865", "1.3122_103.8919", "1.3122_103.8973", "1.3122_103.9027", "1.3176_103.9027", "1.3176_103.8973", "1.3176_103.8919", "1.2959_103.9027", "1.2959_103.9081", "1.3014_103.9135", "1.3068_103.9189", "1.3068_103.9135", "1.3068_103.9081", "1.3068_103.9027", "1.3122_103.9189",
-    
+
 
 
 
@@ -87,6 +156,37 @@ selected_grid = st.selectbox("Select grid cell to color", grid_ids)
 if st.button(f"Color selected grid {color_option}"):
     st.session_state.grid_colors[selected_grid] = color_option
     st.experimental_rerun()
+
+# Save/Load/Clear buttons
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    if st.button("Save Grid Colors"):
+        try:
+            with open('grid_colors.pkl', 'wb') as f:
+                pickle.dump(st.session_state.grid_colors, f)
+            st.success("Grid colors saved successfully!")
+        except Exception as e:
+            st.error(f"Error saving grid colors: {str(e)}")
+
+with col2:
+    if st.button("Load Saved Grid Colors"):
+        try:
+            if os.path.exists('grid_colors.pkl'):
+                with open('grid_colors.pkl', 'rb') as f:
+                    st.session_state.grid_colors = pickle.load(f)
+                st.success("Grid colors loaded successfully!")
+                st.experimental_rerun()
+            else:
+                st.warning("No saved grid colors found!")
+        except Exception as e:
+            st.error(f"Error loading grid colors: {str(e)}")
+
+with col3:
+    if st.button("Clear All Colors"):
+        st.session_state.grid_colors = {}
+        st.experimental_rerun()
+
 
 # Draw grid cells on map
 for cell in grid_cells:
@@ -122,32 +222,9 @@ if search_button and search_query:
 # Display map
 folium_static(m)
 
-# Save/Load/Clear buttons
-col1, col2, col3 = st.columns(3)
+df = pd.DataFrame(data)
 
-with col1:
-    if st.button("Save Grid Colors"):
-        try:
-            with open('grid_colors.pkl', 'wb') as f:
-                pickle.dump(st.session_state.grid_colors, f)
-            st.success("Grid colors saved successfully!")
-        except Exception as e:
-            st.error(f"Error saving grid colors: {str(e)}")
+# Display the table in Streamlit
+st.dataframe(df, hide_index = True, use_container_width= True)
 
-with col2:
-    if st.button("Load Saved Grid Colors"):
-        try:
-            if os.path.exists('grid_colors.pkl'):
-                with open('grid_colors.pkl', 'rb') as f:
-                    st.session_state.grid_colors = pickle.load(f)
-                st.success("Grid colors loaded successfully!")
-                st.experimental_rerun()
-            else:
-                st.warning("No saved grid colors found!")
-        except Exception as e:
-            st.error(f"Error loading grid colors: {str(e)}")
-
-with col3:
-    if st.button("Clear All Colors"):
-        st.session_state.grid_colors = {}
-        st.experimental_rerun()
+st.markdown("[![Text hints](https://img.icons8.com/?size=80&id=MhNWGcvOM41M&format=png)](https://docs.google.com/spreadsheets/d/101R97Az6VXjjAlitPbymr5qZFAAHzdQELR6yZtgCcgQ/edit?usp=sharing) [Text hints](https://docs.google.com/spreadsheets/d/101R97Az6VXjjAlitPbymr5qZFAAHzdQELR6yZtgCcgQ/edit?usp=sharing)")
